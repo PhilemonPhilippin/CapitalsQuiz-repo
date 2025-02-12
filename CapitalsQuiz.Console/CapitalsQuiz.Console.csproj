@@ -10,7 +10,6 @@
   <ItemGroup>
     <Folder Include="DB\" />
     <Folder Include="Weather\" />
-    <Folder Include="Quiz\" />
   </ItemGroup>
 
 </Project>

@@ -50,24 +50,24 @@ internal class Quiz
         System.Console.WriteLine($"Here comes the quiz question.");
         int points;
         string userAnswer;
-        int answerTry = 1;
+        int answerTryNumber = 1;
         do
         {
-            System.Console.WriteLine($"Try nb°{answerTry}. What is the capital of {quizSolution.CountryName} ?");
+            System.Console.WriteLine($"Try nb°{answerTryNumber}. What is the capital of {quizSolution.CountryName} ?");
             System.Console.WriteLine($"Hint : {quizSolution.CapitalName}");
             userAnswer = System.Console.ReadLine();
 
             if (userAnswer != quizSolution.CapitalName)
             {
                 System.Console.WriteLine("Wrong answer.");
-                answerTry++;
+                answerTryNumber++;
             };
-        } while (userAnswer != quizSolution.CapitalName && answerTry <= 3);
+        } while (userAnswer != quizSolution.CapitalName && answerTryNumber <= 3);
 
         if (userAnswer == quizSolution.CapitalName)
         {
             System.Console.WriteLine("Good answer. Bravo!");
-            points = answerTry switch
+            points = answerTryNumber switch
             {
                 1 => 5,
                 2 => 3,

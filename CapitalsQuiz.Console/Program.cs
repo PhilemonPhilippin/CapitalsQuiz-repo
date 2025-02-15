@@ -9,18 +9,33 @@ HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddDbContext<QuizContext>(options => options.UseSqlite(GetConnectionString()));
 using IHost host = builder.Build();
 
-ScopeTheHost(host.Services);
-await host.RunAsync();
+CancellationTokenSource cts = new();
+EnsureDatabaseReady(host.Services, cts.Token);
 
-Quiz quiz = new();
-quiz.Run();
+await RunQuizAsync(cts);
 
+try
+{
+    await host.RunAsync(cts.Token);
+}
+catch (OperationCanceledException)
+{
+    Console.WriteLine("Application is shutting down...");
+}
 
-static void ScopeTheHost(IServiceProvider hostProvider)
+static void EnsureDatabaseReady(IServiceProvider hostProvider, CancellationToken cancellationToken)
 {
     using IServiceScope serviceScope = hostProvider.CreateScope();
+
     QuizContext dbContext = serviceScope.ServiceProvider.GetRequiredService<QuizContext>();
     dbContext.Database.EnsureCreated();
+}
+
+static async Task RunQuizAsync(CancellationTokenSource cts)
+{
+    Quiz quiz = new();
+    await quiz.Run();
+    cts.Cancel();
 }
 
 static string GetConnectionString()
@@ -30,6 +45,5 @@ static string GetConnectionString()
     // Path to my quiz.db.
     string dbPath = Path.Combine(projectPath, "DB", "quiz.db");
     string connectionString = $"Data Source={dbPath}";
-
     return connectionString;
 }

@@ -10,7 +10,7 @@ internal class Quiz
         public string CapitalName { get; set; }
     }
 
-    internal void Run()
+    internal async Task Run()
     {
         System.Console.WriteLine("Hello, and welcome in the CapitalsQuiz program.");
         string alias = AskAlias();

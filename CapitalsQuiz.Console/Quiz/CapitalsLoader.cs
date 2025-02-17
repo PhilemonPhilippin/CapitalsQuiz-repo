@@ -1,7 +1,6 @@
 ﻿using CapitalsQuiz.Console.Entities;
 using System.Text.Json;
 
-
 namespace CapitalsQuiz.Console.Quiz;
 
 internal static class CapitalsLoader

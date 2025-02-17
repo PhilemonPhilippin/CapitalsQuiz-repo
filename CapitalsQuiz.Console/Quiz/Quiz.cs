@@ -1,20 +1,24 @@
-﻿using CapitalsQuiz.Console.Entities;
+﻿using CapitalsQuiz.Console.DB;
+using CapitalsQuiz.Console.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace CapitalsQuiz.Console.Quiz;
 
 internal class Quiz
 {
-    internal class QuizSolution
+    private readonly QuizContext _context;
+    public Quiz(QuizContext quizContext)
     {
-        public string CountryName { get; set; }
-        public string CapitalName { get; set; }
+        _context = quizContext;
     }
 
     internal async Task Run()
     {
         System.Console.WriteLine("Hello, and welcome in the CapitalsQuiz program.");
+
         string alias = AskAlias();
-        int userPoints = 0;
+        User user = await GetUser(alias);
+
         Random random = new();
 
         List<CountryCapital> countryCapitals = CapitalsLoader.GetCountryCapitals();
@@ -24,9 +28,10 @@ internal class Quiz
         {
 
             QuizSolution quizSolution = PickRandomCountryCapital(countryCapitals, random);
-            userPoints += AskQuizQuestion(quizSolution);
-            System.Console.WriteLine($"User points : {userPoints}");
-            System.Console.WriteLine("""Do you want to quit the program ? Type "y" or "yes" to quit.""");
+            await AskQuizQuestion(user, quizSolution);
+
+            System.Console.WriteLine($"User points : {user.Points}");
+            System.Console.WriteLine("""Do you want to quit the program ? Type "y" or "yes" to quit. Just press Enter to keep playing.""");
             answer = System.Console.ReadLine();
         } while (answer != "yes" && answer != "y");
     }
@@ -45,24 +50,47 @@ internal class Quiz
         return alias;
     }
 
-    internal int AskQuizQuestion(QuizSolution quizSolution)
+    internal async Task<User> GetUser(string alias)
+    {
+        User user = await _context.Users.FirstOrDefaultAsync(u => u.Alias.ToLower() == alias.ToLower());
+        if (user is null)
+        {
+            User newUser = new()
+            {
+                Alias = alias,
+            };
+            await _context.Users.AddAsync(newUser);
+            await _context.SaveChangesAsync();
+            return newUser;
+        }
+        else
+        {
+            return user;
+        }
+    }
+
+    internal async Task AskQuizQuestion(User user, QuizSolution quizSolution)
     {
         System.Console.WriteLine($"Here comes the quiz question.");
         int points;
         string userAnswer;
-        int answerTryNumber = 1;
+        int answerTryNumber = 0;
         do
         {
             System.Console.WriteLine($"Try nb°{answerTryNumber}. What is the capital of {quizSolution.CountryName} ?");
             System.Console.WriteLine($"Hint : {quizSolution.CapitalName}");
             userAnswer = System.Console.ReadLine();
+            answerTryNumber++;
 
             if (userAnswer != quizSolution.CapitalName)
             {
                 System.Console.WriteLine("Wrong answer.");
-                answerTryNumber++;
+                if (answerTryNumber < 3)
+                {
+                    await RegisterAnswer(quizSolution, userAnswer, answerTryNumber, 0, user);
+                }
             };
-        } while (userAnswer != quizSolution.CapitalName && answerTryNumber <= 3);
+        } while (userAnswer != quizSolution.CapitalName && answerTryNumber < 3);
 
         if (userAnswer == quizSolution.CapitalName)
         {
@@ -79,7 +107,34 @@ internal class Quiz
             points = -2;
         }
 
-        return points;
+        await UpdatePoints(user, points);
+        await RegisterAnswer(quizSolution, userAnswer, answerTryNumber, points, user);
+    }
+
+    internal async Task RegisterAnswer(QuizSolution quizSolution, string userAnswer, int answerTryNumber, int points, User user)
+    {
+        AnswerHistory answer = new()
+        {
+            CountryName = quizSolution.CountryName,
+            CapitalName = quizSolution.CapitalName,
+            UserAnswer = userAnswer ?? string.Empty,
+            AnswerTryNumber = answerTryNumber,
+            IsRightAnswer = points == 5 || points == 3 || points == 1,
+            AppliedPoints = points,
+            UserId = user.Id,
+            User = user
+        };
+
+        await _context.Answers.AddAsync(answer);
+        await _context.SaveChangesAsync();
+    }
+
+    internal async Task UpdatePoints(User user, int points)
+    {
+        user.Points += points;
+        user.ModifiedOn = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
     }
 
     internal QuizSolution PickRandomCountryCapital(List<CountryCapital> countryCapitals, Random random)

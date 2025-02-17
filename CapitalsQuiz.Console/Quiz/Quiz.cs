@@ -4,14 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CapitalsQuiz.Console.Quiz;
 
-internal class Quiz
+internal class Quiz(QuizContext context)
 {
-    private readonly QuizContext _context;
-    public Quiz(QuizContext quizContext)
-    {
-        _context = quizContext;
-    }
-
     internal async Task Run()
     {
         System.Console.WriteLine("Hello, and welcome in the CapitalsQuiz program.");
@@ -52,15 +46,15 @@ internal class Quiz
 
     internal async Task<User> GetUser(string alias)
     {
-        User user = await _context.Users.FirstOrDefaultAsync(u => u.Alias.ToLower() == alias.ToLower());
+        User user = await context.Users.FirstOrDefaultAsync(u => u.Alias.ToLower() == alias.ToLower());
         if (user is null)
         {
             User newUser = new()
             {
                 Alias = alias,
             };
-            await _context.Users.AddAsync(newUser);
-            await _context.SaveChangesAsync();
+            await context.Users.AddAsync(newUser);
+            await context.SaveChangesAsync();
             return newUser;
         }
         else
@@ -125,8 +119,8 @@ internal class Quiz
             User = user
         };
 
-        await _context.Answers.AddAsync(answer);
-        await _context.SaveChangesAsync();
+        await context.Answers.AddAsync(answer);
+        await context.SaveChangesAsync();
     }
 
     internal async Task UpdatePoints(User user, int points)
@@ -134,7 +128,7 @@ internal class Quiz
         user.Points += points;
         user.ModifiedOn = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await context.SaveChangesAsync();
     }
 
     internal QuizSolution PickRandomCountryCapital(List<CountryCapital> countryCapitals, Random random)

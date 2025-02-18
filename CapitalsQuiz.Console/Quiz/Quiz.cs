@@ -46,7 +46,7 @@ internal class Quiz(QuizContext context)
 
     internal async Task<User> GetUser(string alias)
     {
-        User user = await context.Users.FirstOrDefaultAsync(u => u.Alias.ToLower() == alias.ToLower());
+        User? user = await context.Users.FirstOrDefaultAsync(u => u.Alias.ToLower() == alias.ToLower());
         if (user is null)
         {
             User newUser = new()
@@ -79,10 +79,7 @@ internal class Quiz(QuizContext context)
             if (userAnswer != quizSolution.CapitalName)
             {
                 System.Console.WriteLine("Wrong answer.");
-                if (answerTryNumber < 3)
-                {
-                    await RegisterAnswer(quizSolution, userAnswer, answerTryNumber, 0, user);
-                }
+                if (answerTryNumber < 3) await RegisterAnswer(quizSolution, userAnswer, answerTryNumber, 0, user);
             };
         } while (userAnswer != quizSolution.CapitalName && answerTryNumber < 3);
 
@@ -118,7 +115,6 @@ internal class Quiz(QuizContext context)
             UserId = user.Id,
             User = user
         };
-
         await context.Answers.AddAsync(answer);
         await context.SaveChangesAsync();
     }
@@ -127,7 +123,6 @@ internal class Quiz(QuizContext context)
     {
         user.Points += points;
         user.ModifiedOn = DateTime.UtcNow;
-
         await context.SaveChangesAsync();
     }
 
@@ -137,7 +132,6 @@ internal class Quiz(QuizContext context)
         int offset = random.Next(0, total);
 
         CountryCapital countryCapital = countryCapitals[offset];
-
         return new QuizSolution()
         {
             CountryName = countryCapital.CountryName,

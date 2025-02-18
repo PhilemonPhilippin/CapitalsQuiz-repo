@@ -29,8 +29,8 @@ internal class QuizHostedService(IServiceProvider services, IHostApplicationLife
     private async Task RunQuizAsync()
     {
         using IServiceScope serviceScope = services.CreateScope();
-        QuizContext context = serviceScope.ServiceProvider.GetRequiredService<QuizContext>();
-        Quiz.Quiz quiz = new(context);
+        QuizContext dbContext = serviceScope.ServiceProvider.GetRequiredService<QuizContext>();
+        Quiz.Quiz quiz = new(dbContext);
         await quiz.Run();
     }
 }
